@@ -1,0 +1,369 @@
+---
+title: "UKB_depression_phenotype"
+author: "Natasha Sangha's code adapted by Hannah Casey for use in UK Biobank Application 4844"
+date: "2/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(data.table)
+library(haven)
+library(tidyr)
+library(ggplot2)
+```
+
+Load in UK Biobank dataframes from datastore
+```{r Load in UKB dataframes}
+
+## Load in touchscreen data
+UKBBTouchscreen <- readRDS("/Volumes/GenScotDepression/data/ukb/phenotypes/fields/2020-09-phenotypes-ukb43743/Touchscreen.rds")
+
+## Thoughts and Feelings Follow-Up Questionnaire (online follow up)
+UKBBMentalHealth <- readRDS("/Volumes/GenScotDepression/data/ukb/phenotypes/fields/2020-09-phenotypes-ukb43743/MentalHealth.rds")
+
+## Recruitment data
+UKBBRecruitment<- readRDS("/Volumes/GenScotDepression/data/ukb/phenotypes/fields/2020-09-phenotypes-ukb43743/Recruitment.rds")
+
+## Verbal interview
+UKBBVerbalInterview<- readRDS("/Volumes/GenScotDepression/data/ukb/phenotypes/fields/2020-09-phenotypes-ukb43743/VerbalInterview.rds")
+
+## Work environment
+UKBBWorkEnvironment <- readRDS("/Volumes/GenScotDepression/data/ukb/phenotypes/fields/2020-09-phenotypes-ukb43743/WorkEnvironment.rds")
+
+## Baseline Characteristics
+UKBBBaselineCharacteristics <- readRDS("/Volumes/GenScotDepression/data/ukb/phenotypes/fields/2020-09-phenotypes-ukb43743/BaselineCharacteristics.rds")
+```
+
+Combine all columns of interest into single dataframe
+
+```{r pressure, echo=FALSE}
+df <- cbind(UKBBTouchscreen[,1],
+           UKBBTouchscreen[grepl("f.4642.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.4653.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.6156.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.5663.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.5674.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.4598.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.4609.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.4620.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.4631.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.5375.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.5386.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.2090.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.2100.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.20116.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.20117.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.1558.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.826.*", names(UKBBTouchscreen))],
+           
+           UKBBMentalHealth[grepl("f.20502.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20492.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20493.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20548.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20501.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20502.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20492.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20493.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20548.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20446.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20441.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20536.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20532.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20534.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20449.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20450.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20435.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20437.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20440.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20442.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20448.*", names(UKBBMentalHealth))],
+           UKBBMentalHealth[grepl("f.20400.*", names(UKBBMentalHealth))],
+                      
+           UKBBVerbalInterview[grepl("f.20002.*", names(UKBBVerbalInterview))],
+           UKBBVerbalInterview[grepl("f.20001.*", names(UKBBVerbalInterview))],
+           
+           #UKBBPhysicalMeasures[grepl(".21001.*", names(UKBBPhysicalMeasures))],
+           
+           UKBBTouchscreen[grepl("f.20124.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.20123.*", names(UKBBTouchscreen))],
+           UKBBTouchscreen[grepl("f.20125.*", names(UKBBTouchscreen))],
+           
+           UKBBBaselineCharacteristics[grepl("f.31.*", names(UKBBBaselineCharacteristics))],
+           UKBBBaselineCharacteristics[grepl("f.189.*", names(UKBBBaselineCharacteristics))], 
+           UKBBRecruitment[grepl("f.53.*", names(UKBBRecruitment))],
+           UKBBRecruitment[grepl("f.54.*", names(UKBBRecruitment))],
+           UKBBRecruitment[grepl("f.21003.*", names(UKBBRecruitment))],
+           UKBBRecruitment[grepl("f.53.*", names(UKBBRecruitment))])
+```
+
+Change formatting of column names to match Natasha's algorithm
+
+```{r Format column names}
+## Change formatting of column names
+names(df) <- gsub("\\.", "_", names(df))
+names(df) <- gsub("f", "n", names(df))
+
+names(df)[1] <-  "f_eid"
+```
+
+Define column names of variables in each UKB category
+
+```{r Catagorize variables}
+touchscreen_cols <- colnames(df)[grep(".*_4642_.*|.*_4653_.*|.*_6156_.*|.*_5663_.*|.*_5674_.*", colnames(df))]
+touchscreen_cols_depression <- colnames(df)[grep(".*_4598_.*|.*_4609_.*|.*_4620_.*|.*_4631_.*|.*_5375_.*|.*_5386_.*|.*_2090_.*|.*_2100_.*", colnames(df))]
+reception_cols <- colnames(df)[grep(".*_53_*|.*_54_*|.*_21003_*", colnames(df))]
+lifestyle_cols <- colnames(df)[grep(".*_20116_*|.*_20117_*|.*_1558_*", colnames(df))]
+neuropsych <- colnames(df)[grep(".*_20002_*", names(df))]
+cancer <- colnames(df)[grep(".*_20001_*", names(df))]
+shiftwork <-colnames(df)[grep(".*_826_*", colnames(df))]
+
+```
+
+Select variables in touchscreen questionnaire, recruitment questionnaire (labelled as reception in Natasha's code), lifestyle questionnaire, verbal interview (neuropsych and cancer in Natasha's code) 
+
+```{r Select variables}
+SelectColumns1 <- c("f_eid", touchscreen_cols, touchscreen_cols_depression, reception_cols, lifestyle_cols, neuropsych, cancer, shiftwork)
+dfSelected1 <- df[SelectColumns1]
+dfSelected1 <- as.data.table(dfSelected1)
+```
+
+Select columns pertaining to MHQ and merge with previous dataframe
+
+```{r}
+mhq_cols <- colnames(df)[grep(".*_20501_.*|.*_20502_.*|.*_20492_.*|.*_20493_.*|.*_20548_.*", colnames(df))]
+mhq_cols_depression <- colnames(df)[grep(".*_20446_.*|.*_20441_.*|.*_20536_.*|.*_20532_.*|.*_20534_.*|.*_20449_.*|.*_20450_.*|.*_20435_.*|.*_20437_.*|.*_20440_.*|.*_20442_.*|.*_20448_.*", colnames(df))]
+mhq_date <- colnames(df)[grep(".*_20400_.*", colnames(df))]
+
+SelectColumnsMHQ <- c("f_eid", mhq_cols, mhq_cols_depression, mhq_date)
+dfSelectedMHQ <- df[SelectColumnsMHQ]
+dfSelectedMHQ <- as.data.table(dfSelectedMHQ)
+
+dfSelectedMHQ <- merge(dfSelected1, dfSelectedMHQ, by="f_eid", all.x=T)
+```
+
+
+Identify mania and hypomania groups in those who have completed the manic section in MHQ 
+
+```{r mania MHQ}
+
+# Part 1: If lead questions of manic section in MHQ are completed, identify mania and hypomania groups
+# 20501=mania/excitabiity, 20502=irritability, 20492=length, 20493=severity, 20548=symptoms
+
+# flag if manic screening questions completed
+dfSelectedMHQ[,'completed_mhq':=0][is.na(n_20501_0_0)==F & is.na(n_20502_0_0)==F, completed_mhq:=1]
+dfSelectedMHQ[,.N,.(completed_mhq)] # matches totals as per showcase
+
+# calculate sum of symptoms
+dfSelectedMHQ$n_20548_0_sum <- rowSums(!is.na(dfSelectedMHQ[,c("n_20548_0_1", "n_20548_0_2", "n_20548_0_3", "n_20548_0_4", "n_20548_0_5", "n_20548_0_6", "n_20548_0_7", "n_20548_0_8")]))
+dfSelectedMHQ[is.na(n_20548_0_1)==T, n_20548_0_sum:=NA][n_20548_0_1=="Prefer not to answer", n_20548_0_sum:=0]
+dfSelectedMHQ[,.N,.(n_20548_0_sum)][order(n_20548_0_sum)]
+dfSelectedMHQ[,.N,.(n_20548_0_sum)][order(n_20548_0_sum)][,.(sum(N[is.na(n_20548_0_sum)==F]))] # matches total N as per showcase
+
+# flag non-manic, hypomanic and manic cases
+dfSelectedMHQ[,'phenotype_group_mhq':=character()]
+# manic
+dfSelectedMHQ[is.na(phenotype_group_mhq)==T &
+          (n_20501_0_0=="Yes" | n_20502_0_0=="Yes") & # yes to at least one screening question
+          n_20548_0_sum > 2 & is.na(n_20548_0_sum)==F & # 3+ symptoms
+          n_20492_0_0=="A week or more" & # length of 1 week+
+          n_20493_0_0=="Needed treatment or caused problems with work, relationships, finances, the law or other aspects of life.", # symptoms caused problems
+        phenotype_group_mhq:="manic"]
+# hypomanic
+dfSelectedMHQ[is.na(phenotype_group_mhq)==T &
+          (n_20501_0_0=="Yes" | n_20502_0_0=="Yes") & # yes to at least one screening question
+          n_20548_0_sum > 2 & is.na(n_20548_0_sum)==F & # 3+ symptoms
+          n_20492_0_0 %in% c("At least a day, but less than a week","A week or more"), # length of 24hrs+
+        phenotype_group_mhq:="hypomanic"]
+# non-manic
+dfSelectedMHQ[is.na(phenotype_group_mhq)==T &
+          n_20501_0_0=="No" & n_20502_0_0=="No", # no to both screening questions
+        phenotype_group_mhq:="non-manic"]
+
+
+```
+
+
+Identify mania and hypomania groups in those who have completed the manic section in touchscreen questionnaire (most recent information) 
+
+```{r mania touchscreen}
+# Part 2: If lead questions of manic section in touchscreen questionnaire are completed, identify mania and hypomania groups
+# 4642=mania/excitabiity, 4653=irritability, 5663=length, 5674=severity, 6156=symptoms
+
+# find most recent set of completed manic questions
+for(i in 0:3){
+  dfSelectedMHQ[is.na(get(paste0("n_4642_", i, "_0")))==F & is.na(get(paste0("n_4653_", i, "_0")))==F,
+          ':='(n_4642_latest_0=get(paste0("n_4642_", i, "_0")),
+               n_4653_latest_0=get(paste0("n_4653_", i, "_0")),
+               n_5663_latest_0=get(paste0("n_5663_", i, "_0")),
+               n_5674_latest_0=get(paste0("n_5674_", i, "_0")),
+               n_6156_latest_0=get(paste0("n_6156_", i, "_0")),
+               n_6156_latest_1=get(paste0("n_6156_", i, "_1")),
+               n_6156_latest_2=get(paste0("n_6156_", i, "_2")),
+               n_6156_latest_3=get(paste0("n_6156_", i, "_3"))
+          )]
+}
+
+dfSelectedMHQ[,'completed_touchscreen':=0][is.na(n_4642_latest_0)==F & is.na(n_4653_latest_0)==F, completed_touchscreen:=1]
+dfSelectedMHQ[,.N,.(completed_touchscreen)]
+
+# N completed = 213,701 but showcase suggests 214,180 participants. Checked with below but still only getting 213,701?
+#nrow(dfSelectedMHQ[(is.na(n_4642_0_0)==F & is.na(n_4653_0_0)==F) | (is.na(n_4642_1_0)==F & is.na(n_4653_1_0)==F) | (is.na(n_4642_2_0)==F & is.na(n_4653_2_0)==F),])
+#nrow(dfSelectedMHQ[is.na(n_4642_0_0)==F | is.na(n_4642_1_0)==F | is.na(n_4642_2_0)==F,])
+
+# calculate sum of symptoms
+dfSelectedMHQ$n_6156_latest_sum <- rowSums(!is.na(dfSelectedMHQ[,c("n_6156_latest_0", "n_6156_latest_1", "n_6156_latest_2", "n_6156_latest_3")]))
+dfSelectedMHQ[is.na(n_6156_latest_0)==T, n_6156_latest_sum:=NA][n_6156_latest_0=="None of the above", n_6156_latest_sum:=0][n_6156_latest_0=="All of the above", n_6156_latest_sum:=4]
+dfSelectedMHQ[,.N,.(n_6156_latest_sum)][order(n_6156_latest_sum)]
+dfSelectedMHQ[,.N,.(n_6156_latest_sum)][order(n_6156_latest_sum)][,.(sum(N[is.na(n_6156_latest_sum)==F]))]
+
+# flag non-manic, hypomanic and manic cases
+dfSelectedMHQ[,'phenotype_group_touchscreen':=character()]
+# manic
+dfSelectedMHQ[is.na(phenotype_group_touchscreen)==T &
+          (n_4642_latest_0=="Yes" | n_4653_latest_0=="Yes") & # yes to at least one screening question
+          n_6156_latest_sum > 2 & is.na(n_6156_latest_sum)==F & # 3+ symptoms
+          n_5663_latest_0=="A week or more" & # length of 1 week+
+          n_5674_latest_0=="Needed treatment or caused problems with work, relationships, finances, the law or other aspects of life", # symptoms caused problems
+        phenotype_group_touchscreen:="manic"]
+# hypomanic
+dfSelectedMHQ[is.na(phenotype_group_touchscreen)==T &
+          (n_4642_latest_0=="Yes" | n_4653_latest_0=="Yes") & # yes to at least one screening question
+          n_6156_latest_sum > 2 & is.na(n_6156_latest_sum)==F & # 3+ symptoms
+          n_5663_latest_0 %in% c("At least two days, but less than a week","A week or more"), # length of 2 days+
+        phenotype_group_touchscreen:="hypomanic"]
+# non-manic
+dfSelectedMHQ[is.na(phenotype_group_touchscreen)==T &
+          n_4642_latest_0=="No" & n_4653_latest_0=="No", # no to both screening questions
+        phenotype_group_touchscreen:="non-manic"]
+```
+
+Assign mania phenotype group to each individual, if MHQ is completed this phenotype is prioritized over touchscreen questionnaire
+
+
+```{r Assing mania phenotype group}
+dfSelectedMHQ[,.N,.(phenotype_group_mhq, phenotype_group_touchscreen)][order(phenotype_group_mhq, phenotype_group_touchscreen)]
+dfSelectedMHQ[completed_mhq==1, 'phenotype_group':=phenotype_group_mhq]
+dfSelectedMHQ[completed_mhq==0, phenotype_group:=phenotype_group_touchscreen]
+dfSelectedMHQ[,.N,phenotype_group]
+nrow(dfSelectedMHQ[completed_mhq==1 & completed_touchscreen==1,])
+nrow(dfSelectedMHQ[completed_mhq==1 & completed_touchscreen==1 & is.na(phenotype_group)==T,])
+```
+
+Count the numebr of depressive symptoms in participants who have completed the MHQ/touchscreen questionnaire
+
+
+```{r Identify probable MDD phenotypes}
+# recurrent depression: thoughts and feelings. 5 symptoms, to include at least one of depressed mood or anhedonia
+dfSelectedMHQ[,'completed_mhq_depression':=0][is.na(n_20446_0_0)==F & is.na(n_20441_0_0)==F, completed_mhq_depression:=1]
+dfSelectedMHQ[,.N,.(completed_mhq_depression, completed_mhq)] # everyone that completed manic section also completed depression section
+
+# count number of symptoms **no option to include slowed psychomotor function
+dfSelectedMHQ[,'mhq_depression_count':=0]
+dfSelectedMHQ[n_20446_0_0=="Yes", mhq_depression_count:=mhq_depression_count+1] # depressed mood
+dfSelectedMHQ[n_20441_0_0=="Yes", mhq_depression_count:=mhq_depression_count+1] # anhedonia
+dfSelectedMHQ[n_20536_0_0  %in% c("Gained weight", "Lost weight", "Both gained and lost some weight during the episode") , mhq_depression_count:=mhq_depression_count+1]  # weight change
+dfSelectedMHQ[n_20532_0_0=="Yes", mhq_depression_count:=mhq_depression_count+1] # sleep change
+dfSelectedMHQ[n_20450_0_0=="Yes", mhq_depression_count:=mhq_depression_count+1] # worthlessness
+dfSelectedMHQ[n_20435_0_0=="Yes", mhq_depression_count:=mhq_depression_count+1] # concentration
+dfSelectedMHQ[n_20437_0_0=="Yes", mhq_depression_count:=mhq_depression_count+1] # thoughts of death
+
+dfSelectedMHQ[,'recurrent_depression_mhq':=0]
+dfSelectedMHQ[(n_20446_0_0=="Yes" | n_20441_0_0=="Yes") & # yes to at least one screening question
+          mhq_depression_count > 4 &  # 5+ symptoms
+          n_20448_0_0 == "Yes" & # professional informed (proxy for significant impact)
+          n_20442_0_0 > 1 | n_20442_0_0 == -999, # multiple episodes
+        recurrent_depression_mhq:=1]
+
+dfSelectedMHQ[,'singular_depression_mhq':=0]
+dfSelectedMHQ[(n_20446_0_0=="Yes" | n_20441_0_0=="Yes") & # yes to at least one screening question
+          mhq_depression_count > 4 &  # 5+ symptoms
+          n_20448_0_0 == "Yes" & # professional informed (proxy for significant impact)
+          n_20442_0_0 == 1 & # one episode only
+          recurrent_depression_mhq == 0,
+        singular_depression_mhq:=1]
+
+dfSelectedMHQ[,'no_depression_mhq':=0]
+dfSelectedMHQ[n_20446_0_0=="No" & n_20441_0_0=="No", # no to both lead questions
+        no_depression_mhq:=1]
+
+
+# recurrent depression: touchscreen questionnaire
+for(i in 0:3){
+  dfSelectedMHQ[is.na(get(paste0("n_4598_", i, "_0")))==F & is.na(get(paste0("n_4631_", i, "_0")))==F,
+          ':='(n_4598_latest_0=get(paste0("n_4598_", i, "_0")),
+               n_4631_latest_0=get(paste0("n_4631_", i, "_0")),
+               n_4609_latest_0=get(paste0("n_4609_", i, "_0")),
+               n_4620_latest_0=get(paste0("n_4620_", i, "_0")),
+               n_5375_latest_0=get(paste0("n_5375_", i, "_0")),
+               n_5386_latest_0=get(paste0("n_5386_", i, "_0")),
+               n_2090_latest_0=get(paste0("n_2090_", i, "_0")),
+               n_2100_latest_0=get(paste0("n_2100_", i, "_0"))
+          )]
+}
+
+dfSelectedMHQ[,'recurrent_depression_touchscreen':=0]
+dfSelectedMHQ[n_4598_latest_0=="Yes" & # depressed for week
+          n_4609_latest_0 > 1 & # max dep period of 2 weeks or more
+          n_4620_latest_0 > 1 & # mutiple episodes
+          (n_2090_latest_0 == "Yes" | n_2100_latest_0 == "Yes"), # seen GP or psychiatrist
+        recurrent_depression_touchscreen:=1]
+dfSelectedMHQ[n_4631_latest_0=="Yes" & # anhedonia for week
+          n_5375_latest_0 > 1 & # max period of 2 weeks or more
+          n_5386_latest_0 > 1 & # mutiple episodes
+          (n_2090_latest_0=="Yes" | n_2100_latest_0=="Yes"), # seen GP or psychiatrist
+        recurrent_depression_touchscreen:=1]
+
+dfSelectedMHQ[,'singular_depression_touchscreen':=0]
+dfSelectedMHQ[n_4598_latest_0=="Yes" & # depressed for week
+          n_4609_latest_0 > 1 & # max dep period of 2 weeks or more
+          n_4620_latest_0 == 1 & # one episode
+          (n_2090_latest_0=="Yes" | n_2100_latest_0=="Yes") & # seen GP or psychiatrist
+          recurrent_depression_touchscreen == 0,
+        singular_depression_touchscreen:=1]
+dfSelectedMHQ[n_4631_latest_0=="Yes" & # anhedonia for week
+          n_5375_latest_0 > 1 & # max dep period of 2 weeks or more
+          n_5386_latest_0 == 1 & # one episode
+          (n_2090_latest_0=="Yes" | n_2100_latest_0=="Yes") & # seen GP or psychiatrist
+          recurrent_depression_touchscreen == 0,
+        singular_depression_touchscreen:=1]
+
+dfSelectedMHQ[,'no_depression_touchscreen':=0]
+dfSelectedMHQ[n_4598_latest_0=="No" & n_4631_latest_0=="No", # no to both lead questions
+        no_depression_touchscreen:=1]
+
+
+
+
+
+dfSelectedMHQ[,'recurrent_depression':=ifelse(completed_mhq_depression==1,recurrent_depression_mhq,recurrent_depression_touchscreen)]
+dfSelectedMHQ[,'single_depression':=ifelse(completed_mhq_depression==1,singular_depression_mhq,singular_depression_touchscreen)]
+dfSelectedMHQ[,'no_depression':=ifelse(completed_mhq_depression==1,no_depression_mhq,no_depression_touchscreen)]
+dfSelectedMHQ[recurrent_depression==1,'dep_phenotype_group':='recurrent_depression']
+dfSelectedMHQ[single_depression==1,dep_phenotype_group:='single_depression']
+dfSelectedMHQ[no_depression==1,dep_phenotype_group:='no_depression']
+
+table(dfSelectedMHQ$phenotype_group, dfSelectedMHQ$dep_phenotype_group)
+
+dfSelectedMHQ[(is.na(phenotype_group)==T | phenotype_group=="non-manic") & recurrent_depression==1, phenotype_group:="recurrent depression"]
+dfSelectedMHQ[(is.na(phenotype_group)==T | phenotype_group=="non-manic") & recurrent_depression==0 & single_depression==1, phenotype_group:="single depression"]
+dfSelectedMHQ[phenotype_group=="non-manic" & no_depression==1, phenotype_group:="control"]
+dfSelectedMHQ[phenotype_group=="non-manic", phenotype_group:=NA]
+
+
+dfSelectedMHQ[, .N, phenotype_group]
+```
+Define manic, depressive and control phenotypes in single column, "patient_group"
+
+```{r Define phenotype}
+dfSelectedMHQ[dep_phenotype_group=="no_depression" & phenotype_group=="control", 'patient_group':="control"]
+dfSelectedMHQ[dep_phenotype_group=="single_depression" & phenotype_group=="single depression", 'patient_group':="single depression"]
+dfSelectedMHQ[dep_phenotype_group=="recurrent_depression" & phenotype_group=="recurrent depression", 'patient_group':="recurrent depression"]
+dfSelectedMHQ[dep_phenotype_group %in% c("single_depression","recurrent_depression") & phenotype_group %in% c("hypomanic","manic"), 'patient_group':="bipolar depression"]
+dfSelectedMHQ[dep_phenotype_group=="no_depression" & phenotype_group %in% c("hypomanic","manic"), 'patient_group':="unipolar mania"]
+dfSelectedMHQ <- dfSelectedMHQ[is.na(patient_group)==F,]
+dfSelectedMHQ[,.N,patient_group]
+```
+```{r Save output}
+write.csv(dfSelectedMHQ, "~/Desktop/PhD/projects/UKB_depression_phenotype/output/UKB_depression_phenotype.csv", row.names = F)
+```
+
